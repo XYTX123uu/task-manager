@@ -16,13 +16,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $status = $_POST['status'] ?? 'pending';
     
     $start_date = !empty($_POST['start_date']) ? date('Y-m-d', strtotime(str_replace('/', '-', $_POST['start_date']))) : null;
-    $due_date = !empty($_POST['due_date']) ? date('Y-m-d', strtotime(str_replace('/', '-', $_POST['due_date']))) : null;
+    $due_date   = !empty($_POST['due_date'])   ? date('Y-m-d', strtotime(str_replace('/', '-', $_POST['due_date'])))   : null;
+
+    $attachment = null;  
+    if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = 'uploads/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+        $fileName = time() . '_' . basename($_FILES['attachment']['name']);
+        $targetFile = $uploadDir . $fileName;
+        
+        $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+        $fileType = mime_content_type($_FILES['attachment']['tmp_name']);
+        $maxSize = 2 * 1024 * 1024; 
+        
+        if (in_array($fileType, $allowedTypes) && $_FILES['attachment']['size'] < $maxSize) {
+            if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetFile)) {
+                $attachment = $targetFile; 
+            } else {
+                $error = '文件移动失败，请检查目录权限';
+            }
+        } else {
+            $error = '文件类型只支持 JPG/PNG/PDF，大小不超过 2MB';
+        }
+    }
+    // --------------------------------
 
     if (empty($title)) {
         $error = '任务标题不能为空';
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO tasks (user_id, title, description, status, start_date, due_date) VALUES (?, ?, ?, ?, ?, ?)");
-        if ($stmt->execute([$_SESSION['user_id'], $title, $description, $status, $start_date, $due_date])) {
+    }
+    
+    if (empty($error)) {
+        $stmt = $pdo->prepare("INSERT INTO tasks (user_id, title, description, status, start_date, due_date, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt->execute([$_SESSION['user_id'], $title, $description, $status, $start_date, $due_date, $attachment])) {
             $success = '任务创建成功！<a href="index.php">返回列表</a>';
         } else {
             $error = '创建失败，请重试';
@@ -37,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <?php if ($success): ?>
     <div class="success"><?php echo $success; ?></div>
 <?php else: ?>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         <div class="form-group">
             <label>标题 *</label>
             <input type="text" name="title" required>
@@ -71,6 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
         </div>
 
+        <div class="form-group">
+            <label>附件（JPG/PNG/PDF，≤2MB）</label>
+            <input type="file" name="attachment" accept="image/jpeg,image/png,application/pdf">
+        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">创建任务</button>
             <a href="index.php" class="btn btn-secondary">取消</a>
@@ -78,7 +110,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </form>
 
     <script>
-        // 中文语言配置
         const zhLocale = {
             weekdays: { shorthand: ["日","一","二","三","四","五","六"], longhand: ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"] },
             months: { shorthand: ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"], longhand: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"] },

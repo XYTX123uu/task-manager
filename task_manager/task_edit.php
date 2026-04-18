@@ -31,6 +31,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $start_date = !empty($_POST['start_date']) ? date('Y-m-d', strtotime(str_replace('/', '-', $_POST['start_date']))) : null;
     $due_date = !empty($_POST['due_date']) ? date('Y-m-d', strtotime(str_replace('/', '-', $_POST['due_date']))) : null;
 
+    $attachment = $task['attachment']; 
+    if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = 'uploads/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+        $fileName = time() . '_' . basename($_FILES['attachment']['name']);
+        $targetFile = $uploadDir . $fileName;
+        $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+        $fileType = mime_content_type($_FILES['attachment']['tmp_name']);
+        if (in_array($fileType, $allowedTypes) && $_FILES['attachment']['size'] < 2 * 1024 * 1024) {
+            if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetFile)) {
+                if ($attachment && file_exists($attachment)) {
+                    unlink($attachment); 
+                }
+                $attachment = $targetFile;
+            } else {
+                $error = '文件移动失败，请检查目录权限';
+            }
+        } else {
+            $error = '文件类型只支持 JPG/PNG/PDF，大小不超过 2MB';
+        }
+    }
+
 if (empty($title)) {
         $error = '任务标题不能为空';
     } else {
@@ -42,6 +66,7 @@ if (empty($title)) {
             $task['status'] = $status;
             $task['start_date'] = $start_date;
             $task['due_date'] = $due_date;
+            $task['attachment'] = $attachment;
         } else {
             $error = '更新失败，请重试';
         }
@@ -86,6 +111,15 @@ if (empty($title)) {
         <i class="fas fa-calendar-alt calendar-icon" data-target="due_date"></i>
     </div>
 </div>
+<div class="form-group">
+            <label>附件（JPG/PNG/PDF，≤2MB）</label>
+            <input type="file" name="attachment" accept="image/jpeg,image/png,application/pdf">
+            <?php if ($task['attachment']): ?>
+                <p>当前附件：<a href="<?php echo htmlspecialchars($task['attachment']); ?>" target="_blank">查看/下载</a></p>
+            <?php endif; ?>
+        </div>
+
+        <div class="form-actions">
         <button type="submit">保存修改</button>
         <a href="index.php" class="btn">取消</a>
     </form>

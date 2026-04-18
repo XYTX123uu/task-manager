@@ -149,9 +149,9 @@ button:hover, .btn:hover {
     display: inline-block;
 }
 
-.status-pending { background: #e74c3c; }
-.status-in_progress { background: #f1c40f; 
-                      color: #333;                     }
+.status-pending { background: #f39c12;  }
+.status-in_progress { background: #3498db;; 
+                      color: white;                     }
 .status-completed { background: #2ecc71; }
 
 .task-actions {
@@ -304,4 +304,25 @@ footer {
 }
 .calendar-icon:hover {
     color: #2980b9;
+}
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+.pagination a {
+    display: inline-block;
+    padding: 5px 10px;
+    margin: 0 2px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #333;
+    background: #fff;
+}
+.pagination a.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+.pagination a:hover:not(.active) {
+    background: #f4f4f4;
 }
