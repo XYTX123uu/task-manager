@@ -41,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = '文件类型只支持 JPG/PNG/PDF，大小不超过 2MB';
         }
     }
-    // --------------------------------
 
     if (empty($title)) {
         $error = '任务标题不能为空';
